@@ -4,7 +4,7 @@ from setuptools import setup
 
 setup(
     name='webdriver-assistant',
-    version='0.0.2',
+    version='0.0.3',
     description='webdriver assistant',
     license='',
     author='ytyng',
@@ -12,11 +12,4 @@ setup(
     url='https://github.com/ytyng/python-webdriver-assistant',
     keywords='',
     packages=['webdriver_assistant'],
-    # install_requires=['selenium'],
-    entry_points={
-        # 'console_scripts': [
-        #     'ping-torico-credentials = '
-        #     'torico_credentials_client.ping_torico_credentials:main',
-        # ]
-    },
 )

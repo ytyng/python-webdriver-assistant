@@ -147,3 +147,18 @@ def send_return(driver: WebDriver, css_selector: str) -> None:
     if not e:
         return
     e.send_keys(Keys.RETURN)
+
+
+def parse_url_query(url, flatten=True, *kwargs):
+    """
+    Get parsed url queries
+    """
+    from urllib.parse import urlparse, parse_qs
+    parsed_url = urlparse(url)
+    qs = parse_qs(parsed_url.query, *kwargs)
+    if not flatten:
+        return qs
+    return {
+        k: v if len(v) >= 2 else v[0]
+        for k, v in qs.items()
+    }
