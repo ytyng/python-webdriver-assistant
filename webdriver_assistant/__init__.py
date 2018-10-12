@@ -37,13 +37,13 @@ default_user_agent = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_5) ' \
 
 
 def start_chrome_driver(
-        *, headless: Union[str, bool] = 'auto',
+        *, headless: Optional[bool] = None,
         user_agent: Optional[bool] = None,
         insecure: bool = False) -> WebDriver:
     options = ChromeOptions()
 
     def _is_headless_mode():
-        if headless == 'auto':
+        if headless is None:
             import sys
             if 'test' in sys.argv:
                 return True
