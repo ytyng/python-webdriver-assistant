@@ -6,10 +6,11 @@ import webdriver_assistant as wa
 
 class WebdriverAssistantTest(unittest.TestCase):
 
+    @wa.virtual_display_on_linux()
     def test_session(self):
         if not os.environ.get('MANGAZENKAN_PASSWORD'):
             return
-        wa.start_display_on_linux()
+        # wa.start_display_on_linux()
         d = wa.start_chrome_driver(headless=False)
         d.get('https://www.mangazenkan.com/mypage/login.php')
 

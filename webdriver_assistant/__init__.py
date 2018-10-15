@@ -1,6 +1,6 @@
 import os
 import time
-from typing import Union, Optional
+from typing import Optional
 
 from selenium.webdriver import Chrome, ChromeOptions, DesiredCapabilities
 
@@ -8,6 +8,7 @@ from selenium.common.exceptions import WebDriverException
 from selenium.webdriver.chrome.webdriver import WebDriver
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.remote.webelement import WebElement
+from contextlib import contextmanager
 
 
 class BrowserTimeout(Exception):
@@ -17,6 +18,7 @@ class BrowserTimeout(Exception):
 def start_display_on_linux():
     """
     Ubuntu の場合、仮想フレームバッファを起動する
+    生で使わずに、下に書いてあるコンテクストマネージャを使うこと
     """
     import platform
     if platform.system() != 'Linux':
@@ -29,6 +31,19 @@ def start_display_on_linux():
     display = Display(visible=0, size=(1280, 800))
     display.start()
     return display
+
+
+@contextmanager
+def virtual_display_on_linux():
+    """
+    仮想ディスプレイを起動じ、自動的にクローズするコンテクストマネージャ
+    デコレータとしても使える
+    使う時は () 必要なので書き忘れないこと
+    """
+    display = start_display_on_linux()
+    yield display
+    if display:
+        display.stop()
 
 
 default_user_agent = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_5) ' \
