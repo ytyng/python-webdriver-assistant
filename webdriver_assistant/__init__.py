@@ -14,6 +14,8 @@ from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.remote.webelement import WebElement
 from contextlib import contextmanager
 
+system_is_linux = platform.system() == 'Linux'
+
 
 class BrowserTimeout(Exception):
     pass
@@ -24,7 +26,7 @@ def start_display_on_linux():
     Ubuntu の場合、仮想フレームバッファを起動する
     生で使わずに、下に書いてあるコンテクストマネージャを使うこと
     """
-    if platform.system() != 'Linux':
+    if not system_is_linux:
         return
     try:
         from pyvirtualdisplay import Display
@@ -65,14 +67,14 @@ def start_chrome_driver(
             import sys
             if 'test' in sys.argv:
                 return True
-        return headless
+        return headless or system_is_linux
 
     if _is_headless_mode():
         # ヘッドレスモードを有効にする
         options.add_argument('--headless')
     options.add_argument('--lang=ja')
 
-    if platform.system() == 'Linux':
+    if system_is_linux:
         options.add_argument('--no-sandbox')
         options.add_argument('--no-zygote')
         options.add_argument('disable-infobars')
