@@ -1,5 +1,9 @@
+#!/usr/bin/env python
+# coding: utf-8
+
 import os
 import time
+import platform
 from typing import Optional
 
 from selenium.webdriver import Chrome, ChromeOptions, DesiredCapabilities
@@ -20,7 +24,6 @@ def start_display_on_linux():
     Ubuntu の場合、仮想フレームバッファを起動する
     生で使わずに、下に書いてあるコンテクストマネージャを使うこと
     """
-    import platform
     if platform.system() != 'Linux':
         return
     try:
@@ -68,6 +71,15 @@ def start_chrome_driver(
         # ヘッドレスモードを有効にする
         options.add_argument('--headless')
     options.add_argument('--lang=ja')
+
+    if platform.system() == 'Linux':
+        options.add_argument('--no-sandbox')
+        options.add_argument('--no-zygote')
+        options.add_argument('disable-infobars')
+        options.add_argument('--disable-setuid-sandbox')
+        options.add_argument('--disable-dev-shm-usage')
+        options.add_argument('--disable-gpu')
+
     options.add_argument('--ignore-certificate-errors')  # 多分意味ない
     if user_agent is None:
         user_agent = default_user_agent
