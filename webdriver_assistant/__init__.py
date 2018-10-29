@@ -2,16 +2,20 @@
 # coding: utf-8
 
 import os
+import re
 import time
 import platform
 from typing import Optional
 
 from selenium.webdriver import Chrome, ChromeOptions, DesiredCapabilities
 
-from selenium.common.exceptions import WebDriverException
+from selenium.common.exceptions import WebDriverException, TimeoutException
 from selenium.webdriver.chrome.webdriver import WebDriver
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.remote.webelement import WebElement
+from selenium.webdriver.support.wait import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.common.by import By
 from contextlib import contextmanager
 
 system_is_linux = platform.system() == 'Linux'
@@ -191,3 +195,90 @@ def parse_url_query(url, flatten=True, *kwargs):
         k: v if len(v) >= 2 else v[0]
         for k, v in qs.items()
     }
+
+
+def val(driver: WebDriver, css_selector, text=None, wait=True, end=None,
+        enter=False):
+    """
+    テキストを入力もしくは取得
+    """
+    if wait:
+        wait_visible(driver, css_selector)
+    if text is None:
+        return driver.find_element_by_css_selector(css_selector) \
+            .get_attribute('value')
+    element = driver.find_element_by_css_selector(css_selector)
+    element.clear()
+    if enter:
+        end = Keys.ENTER
+    t = element.get_attribute('type')
+    if t == 'file':
+        element.send_keys(text)
+    else:
+        element.send_keys(text, end if end is not None else Keys.TAB)
+
+
+def find_elements_by_css_selector_and_text_match(
+        driver: WebDriver, css_selector: str, re_text: str):
+    """
+    css_selector で絞り込んだ後、re_text にテキストマッチするものをさらに探して
+    返す
+    """
+    re_compiled = re.compile(re_text)
+    elements = driver.find_elements_by_css_selector(css_selector)
+    for element in elements:
+        if re_compiled.search(element.text):
+            yield element
+
+
+def find_element_by_css_selector_and_text_match(
+        driver: WebDriver, css_selector: str, re_text: str):
+    for e in find_elements_by_css_selector_and_text_match(
+            driver, css_selector, re_text):
+        return e
+
+
+def find_elements_by_css_selector_matched(
+        driver: WebDriver, css_selector: str, match_method: callable):
+    """
+    css_selector で絞り込んだ後、match_method でマッチしたものを返す
+    """
+    elements = driver.find_elements_by_css_selector(css_selector)
+    for element in elements:
+        if match_method(element):
+            yield element
+
+
+def find_element_by_css_selector_matched(
+        driver: WebDriver, css_selector: str, match_method: callable):
+    for e in find_elements_by_css_selector_matched(
+            driver, css_selector, match_method):
+        return e
+
+
+def vlookup_text_match(driver: WebDriver, tr_css_selector, re_text,
+                       td_position, td_css_selector='td'):
+    """
+    :param tr_css_selector: tr タグを絞り込むための CSS セレクタ
+    :param re_text: tr タグのテキストを検索するための正規表現文字列
+    :param td_position: td のいくつめを返すか。0スタート
+    :param td_css_selector: td のセレクタ。td タグ以外を検索する場合など変更
+    """
+    tr = find_element_by_css_selector_and_text_match(
+        driver, tr_css_selector, re_text)
+    tds = tr.find_elements_by_css_selector(td_css_selector)
+    return tds[td_position]
+
+
+def vlookup_text_matched(driver: WebDriver, tr_css_selector, match_method,
+                         td_position, td_css_selector='td'):
+    """
+    :param tr_css_selector: tr タグを絞り込むための CSS セレクタ
+    :param match_method: tr タグのテキストを検索するためのメソッド
+    :param td_position: td のいくつめを返すか。0スタート
+    :param td_css_selector: td のセレクタ。td タグ以外を検索する場合など変更
+    """
+    tr = find_elements_by_css_selector_matched(
+        driver, tr_css_selector, match_method)
+    tds = tr.find_elements_by_css_selector(td_css_selector)
+    return tds[td_position]

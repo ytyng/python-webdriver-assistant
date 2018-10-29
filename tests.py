@@ -14,6 +14,26 @@ class WebdriverAssistantTest(unittest.TestCase):
             self.assertIn('CAcert.org', d.title)
             # wa.preview(d)
 
+    def test_find_element(self):
+        with wa.virtual_display_on_linux():
+            d = wa.start_chrome_driver()
+            d.get('https://example.com/')
+            wa.wait_visible(d, 'h1')
+            element = wa.find_element_by_css_selector_and_text_match(
+                d, 'p a', 'information'
+            )
+            self.assertIn('More information', element.text)
+
+    def test_form_fill(self):
+        with wa.virtual_display_on_linux():
+            d = wa.start_chrome_driver()
+            d.get('https://www.google.com/')
+            wa.wait_visible(d, 'input[name="q"]')
+            wa.fill_inputs(d, {'input[name="q"]': 'manga.club'})
+            wa.send_return(d, 'input[name="q"]')
+            wa.wait_visible(d, 'input[name="q"]')
+            wa.val(d, 'input[name="q"]', '漫画全巻ドットコム', enter=True)
+
 
 if __name__ == '__main__':
     unittest.main()
