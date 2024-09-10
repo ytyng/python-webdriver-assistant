@@ -1,5 +1,5 @@
-#!/usr/bin/env python
-# coding: utf-8
+#!/bin/env python3
+
 import unittest
 
 import webdriver_assistant as wa
@@ -28,11 +28,11 @@ class WebdriverAssistantTest(unittest.TestCase):
         with wa.virtual_display_on_linux():
             d = wa.start_chrome_driver()
             d.get('https://www.google.com/')
-            wa.wait_visible(d, 'input[name="q"]')
-            wa.fill_inputs(d, {'input[name="q"]': 'manga.club'})
-            wa.send_return(d, 'input[name="q"]')
-            wa.wait_visible(d, 'input[name="q"]')
-            wa.val(d, 'input[name="q"]', '漫画全巻ドットコム', enter=True)
+            wa.wait_visible(d, 'textarea[name="q"]')
+            wa.fill_inputs(d, {'textarea[name="q"]': 'manga.club'})
+            wa.send_return(d, 'textarea[name="q"]')
+            wa.wait_visible(d, 'textarea[name="q"]')
+            wa.val(d, 'textarea[name="q"]', '漫画全巻ドットコム', enter=True)
 
 
 if __name__ == '__main__':

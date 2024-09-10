@@ -1,10 +1,9 @@
-#!/usr/bin/env python
-# coding: utf-8
+#!/usr/bin/env python3
 from setuptools import setup
 
 setup(
     name='webdriver-assistant',
-    version='0.0.7',
+    version='0.1.0',
     description='webdriver assistant',
     license='',
     author='ytyng',

@@ -1,22 +1,19 @@
-#!/usr/bin/env python
-# coding: utf-8
+#!/usr/bin/env python3
 
 import os
+import platform
 import re
 import time
-import platform
+from contextlib import contextmanager
 from typing import Optional
 
-from selenium.webdriver import Chrome, ChromeOptions, DesiredCapabilities
-
-from selenium.common.exceptions import WebDriverException, TimeoutException
+from selenium.common.exceptions import \
+    WebDriverException, NoSuchElementException
+from selenium.webdriver import Chrome, ChromeOptions
 from selenium.webdriver.chrome.webdriver import WebDriver
+from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.remote.webelement import WebElement
-from selenium.webdriver.support.wait import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
-from selenium.webdriver.common.by import By
-from contextlib import contextmanager
 
 system_is_linux = platform.system() == 'Linux'
 
@@ -55,15 +52,18 @@ def virtual_display_on_linux():
         display.stop()
 
 
-default_user_agent = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_5) ' \
-                     'AppleWebKit/537.36 (KHTML, like Gecko) ' \
-                     'Chrome/67.0.3396.99 Safari/537.36'
+default_user_agent = (
+    'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) '
+    'AppleWebKit/537.36 (KHTML, like Gecko) '
+    'Chrome/128.0.0.0 Safari/537.36)'
+)
 
 
 def start_chrome_driver(
-        *, headless: Optional[bool] = None,
-        user_agent: Optional[bool] = None,
-        insecure: bool = False) -> WebDriver:
+    *, headless: Optional[bool] = None,
+    user_agent: Optional[bool] = None,
+    insecure: bool = False
+) -> WebDriver:
     options = ChromeOptions()
 
     def _is_headless_mode():
@@ -81,7 +81,6 @@ def start_chrome_driver(
     if system_is_linux:
         options.add_argument('--no-sandbox')
         options.add_argument('--no-zygote')
-        options.add_argument('disable-infobars')
         options.add_argument('--disable-setuid-sandbox')
         options.add_argument('--disable-dev-shm-usage')
         options.add_argument('--disable-gpu')
@@ -92,12 +91,7 @@ def start_chrome_driver(
     options.add_argument(
         '--user-agent=' + user_agent)
 
-    capabilities = DesiredCapabilities.CHROME
-    if insecure:
-        capabilities['acceptSslCerts'] = True  # 多分意味ない
-        capabilities['acceptInsecureCerts'] = True  # 効く
-
-    driver = Chrome(options=options, desired_capabilities=capabilities)
+    driver = Chrome(options=options)
     return driver
 
 
@@ -121,27 +115,32 @@ def preview(driver: WebDriver, filename_prefix: str = None) -> None:
     subprocess.Popen(['open', html_path])
 
 
-def wait_visible(driver: WebDriver, css_selector: str,
-                 timeout: int = 3000) -> None:
+def wait_visible(
+    driver: WebDriver, css_selector: str,
+    timeout: int = 3000
+) -> None:
     """
     エレメントが表示されるまで待つ
     """
     for i in range(int(timeout / 100)):
-        e = driver.find_element_by_css_selector(css_selector)
-        if e.is_displayed():
-            return
+        try:
+            e = driver.find_element(by=By.CSS_SELECTOR, value=css_selector)
+            if e.is_displayed():
+                return
+        except NoSuchElementException:
+            pass
         time.sleep(0.1)
     raise BrowserTimeout(css_selector)
 
 
 def find_element_or_none(
-        driver: WebDriver, css_selector: str
+    driver: WebDriver, css_selector: str
 ) -> Optional[WebElement]:
     """
     エレメントを取得、もしくは None
     """
     try:
-        return driver.find_element_by_css_selector(css_selector)
+        return driver.find_element(by=By.CSS_SELECTOR, value=css_selector)
     except WebDriverException:
         return None
 
@@ -205,9 +204,9 @@ def val(driver: WebDriver, css_selector, text=None, wait=True, end=None,
     if wait:
         wait_visible(driver, css_selector)
     if text is None:
-        return driver.find_element_by_css_selector(css_selector) \
+        return driver.find_element(by=By.CSS_SELECTOR, value=css_selector) \
             .get_attribute('value')
-    element = driver.find_element_by_css_selector(css_selector)
+    element = driver.find_element(by=By.CSS_SELECTOR, value=css_selector)
     element.clear()
     if enter:
         end = Keys.ENTER
@@ -219,45 +218,53 @@ def val(driver: WebDriver, css_selector, text=None, wait=True, end=None,
 
 
 def find_elements_by_css_selector_and_text_match(
-        driver: WebDriver, css_selector: str, re_text: str):
+    driver: WebDriver, css_selector: str, re_text: str
+):
     """
     css_selector で絞り込んだ後、re_text にテキストマッチするものをさらに探して
     返す
     """
     re_compiled = re.compile(re_text)
-    elements = driver.find_elements_by_css_selector(css_selector)
+    elements = driver.find_elements(by=By.CSS_SELECTOR, value=css_selector)
     for element in elements:
         if re_compiled.search(element.text):
             yield element
 
 
 def find_element_by_css_selector_and_text_match(
-        driver: WebDriver, css_selector: str, re_text: str):
+    driver: WebDriver, css_selector: str, re_text: str
+):
     for e in find_elements_by_css_selector_and_text_match(
-            driver, css_selector, re_text):
+        driver, css_selector, re_text
+    ):
         return e
 
 
 def find_elements_by_css_selector_matched(
-        driver: WebDriver, css_selector: str, match_method: callable):
+    driver: WebDriver, css_selector: str, match_method: callable
+):
     """
     css_selector で絞り込んだ後、match_method でマッチしたものを返す
     """
-    elements = driver.find_elements_by_css_selector(css_selector)
+    elements = driver.find_elements(by=By.CSS_SELECTOR, value=css_selector)
     for element in elements:
         if match_method(element):
             yield element
 
 
 def find_element_by_css_selector_matched(
-        driver: WebDriver, css_selector: str, match_method: callable):
+    driver: WebDriver, css_selector: str, match_method: callable
+):
     for e in find_elements_by_css_selector_matched(
-            driver, css_selector, match_method):
+        driver, css_selector, match_method
+    ):
         return e
 
 
-def vlookup_text_match(driver: WebDriver, tr_css_selector, re_text,
-                       td_position, td_css_selector='td'):
+def vlookup_text_match(
+    driver: WebDriver, tr_css_selector, re_text,
+    td_position, td_css_selector='td'
+):
     """
     :param tr_css_selector: tr タグを絞り込むための CSS セレクタ
     :param re_text: tr タグのテキストを検索するための正規表現文字列
@@ -270,8 +277,10 @@ def vlookup_text_match(driver: WebDriver, tr_css_selector, re_text,
     return tds[td_position]
 
 
-def vlookup_text_matched(driver: WebDriver, tr_css_selector, match_method,
-                         td_position, td_css_selector='td'):
+def vlookup_text_matched(
+    driver: WebDriver, tr_css_selector, match_method,
+    td_position, td_css_selector='td'
+):
     """
     :param tr_css_selector: tr タグを絞り込むための CSS セレクタ
     :param match_method: tr タグのテキストを検索するためのメソッド
